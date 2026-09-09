@@ -31,6 +31,20 @@ class HalTiltSensor {
   unsigned long _lastTiltMs = 0;   // Debounce / cooldown
   unsigned long _wakeMs = 0;       // Timestamp of last wake() for stabilization
 
+  // Latest raw angular rates from the most recent successful poll (deg/sec).
+  // Updated every POLL_INTERVAL_MS while the sensor is awake and polling.
+  float _lastGx = 0.0f;
+  float _lastGy = 0.0f;
+  float _lastGz = 0.0f;
+
+  // Relative tilt angle (deg), dead-reckoned by integrating _lastGx/_lastGy
+  // over time. There is no accelerometer reading in this driver to correct
+  // for drift, so this value is only meaningful as a *relative* angle since
+  // the last resetRelativeTiltAngle() call, and will drift during long
+  // sessions (typically usable for tens of seconds before drift matters).
+  float _relTiltXDeg = 0.0f;
+  float _relTiltYDeg = 0.0f;
+
   // Tuning constants
   static constexpr float RATE_THRESHOLD_DPS = 270.0f;      // Deg/sec speed to trigger flick
   static constexpr float NEUTRAL_RATE_DPS = 50.0f;         // Must stop moving below this rate before next trigger
@@ -80,8 +94,13 @@ class HalTiltSensor {
   // True if the QMI8658 IMU is present on this device
   bool isAvailable() const { return _available; }
 
-  // Poll the accelerometer and update tilt gesture state.
-  void update(const uint8_t mode, const uint8_t orientation, const bool inReader);
+  // Poll the gyro and update tilt gesture state.
+  // mode/orientation/inReader drive the reader's tilt-page-turn gesture math
+  // exactly as before. tiltRequested is an independent opt-in for any other
+  // activity that wants raw gyro data (see Activity::wantsTiltSensor()) —
+  // it keeps the sensor awake/polled even when tilt-page-turn is off or
+  // we're outside the reader, without changing existing reader behavior.
+  void update(const uint8_t mode, const uint8_t orientation, const bool inReader, const bool tiltRequested);
 
   // Returns true once per tilt-forward gesture (next page direction).
   // Consumed on read — subsequent calls return false until next gesture.
@@ -97,4 +116,32 @@ class HalTiltSensor {
 
   // Discard any pending tilt events (call when leaving reader or disabling tilt).
   void clearPendingEvents();
+
+  // Raw angular rates (deg/sec) from the most recent successful poll.
+  // Only refreshed while the sensor is awake and being polled (see
+  // Activity::wantsTiltSensor()) — stale (last known) values otherwise.
+  void getGyroRatesDps(float& gx, float& gy, float& gz) const {
+    gx = _lastGx;
+    gy = _lastGy;
+    gz = _lastGz;
+  }
+
+  // Relative tilt angle (deg) on the raw sensor X/Y axes (PCB frame — NOT
+  // corrected for screen orientation, unlike the reader's page-turn gesture
+  // math), integrated from gyro rate since the last resetRelativeTiltAngle()
+  // call. This is dead-reckoning from a gyro-only IMU driver (no
+  // accelerometer fusion), so it drifts — call resetRelativeTiltAngle() at
+  // a known reference pose (e.g. in onEnter() of a tilt-controlled activity)
+  // and don't rely on it for long-running absolute orientation.
+  void getRelativeTiltAngleDeg(float& angleX, float& angleY) const {
+    angleX = _relTiltXDeg;
+    angleY = _relTiltYDeg;
+  }
+
+  // Zero the integrated relative tilt angle. Call when entering a
+  // tilt-controlled activity, or periodically to bound drift.
+  void resetRelativeTiltAngle() {
+    _relTiltXDeg = 0.0f;
+    _relTiltYDeg = 0.0f;
+  }
 };

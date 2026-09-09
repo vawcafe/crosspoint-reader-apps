@@ -100,8 +100,6 @@ EpdFontFamily notosans48EmojiFontFamily(&notosans48EmojiRegularFont, nullptr, nu
 EpdFont notosans16EmojiRegularFont(&notosans_16_emoji);
 EpdFontFamily notosans16EmojiFontFamily(&notosans16EmojiRegularFont, nullptr, nullptr, nullptr);
 
-
-
 EpdFont opendyslexic8RegularFont(&opendyslexic_8_regular);
 EpdFont opendyslexic8BoldFont(&opendyslexic_8_bold);
 EpdFont opendyslexic8ItalicFont(&opendyslexic_8_italic);
@@ -334,8 +332,6 @@ void setupDisplayAndFonts(bool seamless = false) {
   renderer.insertFont(NOTOSANS_48_EMOJI_FONT_ID, notosans48EmojiFontFamily);
   renderer.insertFont(NOTOSANS_16_EMOJI_FONT_ID, notosans16EmojiFontFamily);
 
-
-
   // Discover and load SD card fonts
   sdFontSystem.begin(renderer);
 
@@ -526,7 +522,8 @@ void loop() {
   static unsigned long lastMemPrint = 0;
 
   gpio.update();
-  halTiltSensor.update(SETTINGS.tiltPageTurn, SETTINGS.orientation, activityManager.isReaderActivity());
+  halTiltSensor.update(SETTINGS.tiltPageTurn, SETTINGS.orientation, activityManager.isReaderActivity(),
+                       activityManager.wantsTiltSensor());
 
   renderer.setFadingFix(SETTINGS.fadingFix);
 

@@ -119,6 +119,7 @@ bool HalTiltSensor::deepSleep() {
     // Clear any residual state so it doesn't immediately trigger upon waking
     clearPendingEvents();
     _inTilt = false;
+    resetRelativeTiltAngle();
     LOG_INF("GYR", "QMI8658 entered sleep mode");
     return true;
   } else {
@@ -127,22 +128,28 @@ bool HalTiltSensor::deepSleep() {
   }
 }
 
-void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation, const bool inReader) {
+void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation, const bool inReader, const bool tiltRequested) {
   if (!_available) {
     return;
   }
 
-  // State machine: wake up or sleep based on the enabled flag
-  if ((mode != CrossPointTiltPageTurn::TILT_OFF) && !_isAwake) {
+  // Awake whenever tilt-page-turn is enabled (as before, regardless of activity) or
+  // some other activity explicitly requested raw gyro data.
+  const bool shouldBeAwake = (mode != CrossPointTiltPageTurn::TILT_OFF) || tiltRequested;
+  // Actually poll (I2C traffic) only in the reader with tilt-page-turn on, or when requested.
+  const bool shouldPoll = ((mode != CrossPointTiltPageTurn::TILT_OFF) && inReader) || tiltRequested;
+
+  // State machine: wake up or sleep based on whether anything currently wants the sensor
+  if (shouldBeAwake && !_isAwake) {
     _isAwake = wake();
     return;
-  } else if ((mode == CrossPointTiltPageTurn::TILT_OFF) && _isAwake) {
+  } else if (!shouldBeAwake && _isAwake) {
     _isAwake = !deepSleep();
     return;
   }
 
-  // If disabled, skip the rest of the polling logic and avoid unnecessary I2C traffic in non-reader activities
-  if ((mode == CrossPointTiltPageTurn::TILT_OFF) || !inReader) {
+  // Nothing wants active polling right now: skip and avoid unnecessary I2C traffic
+  if (!shouldPoll) {
     return;
   }
 
@@ -152,13 +159,29 @@ void HalTiltSensor::update(const uint8_t mode, const uint8_t orientation, const 
     return;
   }
 
-  if ((now - _lastPollMs) < POLL_INTERVAL_MS) {
+  const unsigned long elapsedMs = now - _lastPollMs;
+  if (elapsedMs < POLL_INTERVAL_MS) {
     return;
   }
   _lastPollMs = now;
 
   float gx, gy, gz;
   if (!readGyro(gx, gy, gz)) {
+    return;
+  }
+  _lastGx = gx;
+  _lastGy = gy;
+  _lastGz = gz;
+
+  // Dead-reckoned relative angle for generic tilt consumers (see
+  // getRelativeTiltAngleDeg()). Gyro-only integration drifts — callers are
+  // expected to resetRelativeTiltAngle() at a known reference pose.
+  const float elapsedSec = elapsedMs / 1000.0f;
+  _relTiltXDeg += gx * elapsedSec;
+  _relTiltYDeg += gy * elapsedSec;
+
+  // Reader tilt-page-turn gesture detection only applies when the feature is enabled.
+  if (mode == CrossPointTiltPageTurn::TILT_OFF) {
     return;
   }
 

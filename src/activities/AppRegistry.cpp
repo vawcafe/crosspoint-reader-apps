@@ -5,6 +5,8 @@
 #include "activities/duckduckgo/DuckDuckGoActivity.h"
 #include "activities/rss/RssActivity.h"
 #include "activities/sudoku/SudokuActivity.h"
+#include "activities/tiltmaze/TiltMazeActivity.h"
+#include "activities/todo/TodoActivity.h"
 #include "activities/weather/WeatherActivity.h"
 #include "activities/wikipedia/WikipediaActivity.h"
 
@@ -115,5 +117,19 @@ AppRegistry::AppRegistry() {
   apps.push_back(std::make_unique<App>(
       "Dice", UIIcon::Dice, [](GfxRenderer &r, MappedInputManager &i) {
         return std::make_unique<DiceActivity>(r, i);
+      }));
+
+  // Tilt Maze App
+  apps.push_back(std::make_unique<App>(
+      []() { return tr(STR_TILT_MAZE_TITLE); }, UIIcon::Dice,
+      [](GfxRenderer &r, MappedInputManager &i) {
+        return std::make_unique<TiltMazeActivity>(r, i);
+      }));
+
+  // To-Do List App
+  apps.push_back(std::make_unique<App>(
+      []() { return tr(STR_TODO_LIST_TITLE); }, UIIcon::Text,
+      [](GfxRenderer &r, MappedInputManager &i) {
+        return std::make_unique<TodoActivity>(r, i);
       }));
 }

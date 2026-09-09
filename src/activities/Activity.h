@@ -44,6 +44,11 @@ class Activity {
   virtual bool skipLoopDelay() { return false; }
   virtual bool preventAutoSleep() { return false; }
   virtual bool isReaderActivity() const { return false; }
+
+  // Override to true to keep the QMI8658 gyro awake and polled outside of the
+  // reader's tilt-page-turn feature (e.g. a tilt-controlled game). See
+  // HalTiltSensor::getGyroRatesDps() / getRelativeTiltAngleDeg().
+  virtual bool wantsTiltSensor() const { return false; }
   virtual ScreenshotInfo getScreenshotInfo() const { return {}; }
 
   // Unified abstraction to ensure WiFi is connected before performing network requests.

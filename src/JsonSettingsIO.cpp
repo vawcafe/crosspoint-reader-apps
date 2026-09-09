@@ -13,6 +13,7 @@
 #include "OpdsServerStore.h"
 #include "RecentBooksStore.h"
 #include "SettingsList.h"
+#include "TodoStore.h"
 #include "WifiCredentialStore.h"
 
 // Convert legacy settings.
@@ -392,5 +393,44 @@ bool JsonSettingsIO::loadOpds(OpdsServerStore& store, const char* json, bool* ne
   }
 
   LOG_DBG("OPS", "Loaded %zu OPDS servers from file", store.servers.size());
+  return true;
+}
+
+// ---- TodoStore ----
+
+bool JsonSettingsIO::saveTodos(const TodoStore& store, const char* path) {
+  JsonDocument doc;
+
+  JsonArray arr = doc["items"].to<JsonArray>();
+  for (const auto& item : store.getItems()) {
+    JsonObject obj = arr.add<JsonObject>();
+    obj["text"] = item.text;
+    obj["done"] = item.done;
+  }
+
+  String json;
+  serializeJson(doc, json);
+  return Storage.writeFile(path, json);
+}
+
+bool JsonSettingsIO::loadTodos(TodoStore& store, const char* json) {
+  JsonDocument doc;
+  auto error = deserializeJson(doc, json);
+  if (error) {
+    LOG_ERR("TODO", "JSON parse error: %s", error.c_str());
+    return false;
+  }
+
+  store.items.clear();
+  JsonArray arr = doc["items"].as<JsonArray>();
+  for (JsonObject obj : arr) {
+    if (store.items.size() >= TodoStore::MAX_ITEMS) break;
+    TodoItem item;
+    item.text = obj["text"] | std::string("");
+    item.done = obj["done"] | false;
+    store.items.push_back(std::move(item));
+  }
+
+  LOG_DBG("TODO", "Loaded %zu to-do items from file", store.items.size());
   return true;
 }
