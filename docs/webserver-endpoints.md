@@ -74,18 +74,22 @@ curl http://crosspoint.local/api/status
   "mode": "STA",
   "rssi": -45,
   "freeHeap": 123456,
-  "uptime": 3600
+  "uptime": 3600,
+  "device": "X3",
+  "batteryPercent": 82
 }
 ```
 
-| Field      | Type   | Description                                               |
-| ---------- | ------ | --------------------------------------------------------- |
-| `version`  | string | CrossPoint firmware version                               |
-| `ip`       | string | Device IP address                                         |
-| `mode`     | string | `"STA"` (connected to WiFi) or `"AP"` (access point mode) |
-| `rssi`     | number | WiFi signal strength in dBm (0 in AP mode)                |
-| `freeHeap` | number | Free heap memory in bytes                                 |
-| `uptime`   | number | Seconds since device boot                                 |
+| Field            | Type   | Description                                               |
+| ---------------- | ------ | --------------------------------------------------------- |
+| `version`        | string | CrossPoint firmware version                               |
+| `ip`             | string | Device IP address                                         |
+| `mode`           | string | `"STA"` (connected to WiFi) or `"AP"` (access point mode) |
+| `rssi`           | number | WiFi signal strength in dBm (0 in AP mode)                |
+| `freeHeap`       | number | Free heap memory in bytes                                 |
+| `uptime`         | number | Seconds since device boot                                 |
+| `device`         | string | `"X3"` or `"X4"`                                           |
+| `batteryPercent` | number | Battery charge, 0-100                                     |
 
 ---
 

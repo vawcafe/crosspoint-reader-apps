@@ -3,6 +3,7 @@
 #include <ArduinoJson.h>
 #include <FsHelpers.h>
 #include <HalGPIO.h>
+#include <HalPowerManager.h>
 #include <HalStorage.h>
 #include <Logging.h>
 #include <WiFi.h>
@@ -367,6 +368,7 @@ void CrossPointWebServer::handleStatus() const {
   doc["freeHeap"] = ESP.getFreeHeap();
   doc["uptime"] = millis() / 1000;
   doc["device"] = gpio.deviceIsX3() ? "X3" : "X4";
+  doc["batteryPercent"] = powerManager.getBatteryPercentage();
 
   String json;
   serializeJson(doc, json);
