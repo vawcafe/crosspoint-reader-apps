@@ -6,6 +6,7 @@
 #include "activities/rss/RssActivity.h"
 #include "activities/sudoku/SudokuActivity.h"
 #include "activities/tiltmaze/TiltMazeActivity.h"
+#include "activities/timer/TimerActivity.h"
 #include "activities/todo/TodoActivity.h"
 #include "activities/weather/WeatherActivity.h"
 #include "activities/wikipedia/WikipediaActivity.h"
@@ -131,5 +132,12 @@ AppRegistry::AppRegistry() {
       []() { return tr(STR_TODO_LIST_TITLE); }, UIIcon::Text,
       [](GfxRenderer &r, MappedInputManager &i) {
         return std::make_unique<TodoActivity>(r, i);
+      }));
+
+  // Timer App (hourglass countdown + stopwatch)
+  apps.push_back(std::make_unique<App>(
+      []() { return tr(STR_TIMER_TITLE); }, UIIcon::Clock,
+      [](GfxRenderer &r, MappedInputManager &i) {
+        return std::make_unique<TimerActivity>(r, i);
       }));
 }
