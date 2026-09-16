@@ -3,6 +3,7 @@
 #include "activities/chess/ChessActivity.h"
 #include "activities/dice/DiceActivity.h"
 #include "activities/duckduckgo/DuckDuckGoActivity.h"
+#include "activities/mathquiz/MathQuizActivity.h"
 #include "activities/rss/RssActivity.h"
 #include "activities/sudoku/SudokuActivity.h"
 #include "activities/tiltmaze/TiltMazeActivity.h"
@@ -139,5 +140,12 @@ AppRegistry::AppRegistry() {
       []() { return tr(STR_TIMER_TITLE); }, UIIcon::Clock,
       [](GfxRenderer &r, MappedInputManager &i) {
         return std::make_unique<TimerActivity>(r, i);
+      }));
+
+  // Math Quiz App (flashcards for kids)
+  apps.push_back(std::make_unique<App>(
+      []() { return tr(STR_MATH_QUIZ_TITLE); }, UIIcon::Calculator,
+      [](GfxRenderer &r, MappedInputManager &i) {
+        return std::make_unique<MathQuizActivity>(r, i);
       }));
 }
